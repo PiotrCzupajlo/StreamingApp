@@ -35,13 +35,12 @@ namespace ScreenStreamer
             }
         }
 
-        // Semaphore to limit concurrent decoding tasks to 1
         private readonly SemaphoreSlim _decodeSemaphore = new(1, 1);
 
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = this; // Bind to self for XAML
+            DataContext = this; 
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -103,8 +102,11 @@ namespace ScreenStreamer
                         {
                             endpoints.MapGet("/", async context =>
                             {
-                                await context.Response.WriteAsync("<html><body><img src='/stream'/></body></html>");
+                                var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
+                                context.Response.ContentType = "text/html";
+                                await context.Response.SendFileAsync(filePath);
                             });
+
 
                             endpoints.MapGet("/stream", async context =>
                             {
@@ -117,7 +119,7 @@ namespace ScreenStreamer
                                 var endBytes = System.Text.Encoding.ASCII.GetBytes("\r\n");
 
                                 DateTime lastSent = DateTime.MinValue;
-                                TimeSpan minInterval = TimeSpan.FromMilliseconds(66); // ~15 fps
+                                TimeSpan minInterval = TimeSpan.FromMilliseconds(66); 
 
                                 try
                                 {
@@ -261,18 +263,15 @@ namespace ScreenStreamer
                     }
                     else if (frameBuffer.Length > 10 * 1024 * 1024)
                     {
-                        // Reset if buffer gets too large without a complete JPEG frame end
                         frameBuffer.SetLength(0);
                         frameBuffer.Position = 0;
                     }
 
-                    // Small delay to prevent CPU spin when waiting for more data
                     await Task.Delay(15, token);
                 }
             }
             catch (OperationCanceledException)
             {
-                // expected on cancellation
             }
             finally
             {
