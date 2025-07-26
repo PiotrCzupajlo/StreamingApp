@@ -35,6 +35,9 @@ namespace ScreenStreamer
             }
         }
 
+        // Semaphore to limit concurrent decoding tasks to 1
+        private readonly SemaphoreSlim _decodeSemaphore = new(1, 1);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -105,22 +108,49 @@ namespace ScreenStreamer
 
                             endpoints.MapGet("/stream", async context =>
                             {
-                                context.Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
-                                while (!token.IsCancellationRequested)
+                                context.Response.ContentType = "multipart/x-mixed-replace;boundary=frame";
+                                context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                                context.Response.Headers["Pragma"] = "no-cache";
+                                context.Response.Headers["Expires"] = "0";
+
+                                var boundaryBytes = System.Text.Encoding.ASCII.GetBytes("--frame\r\nContent-Type: image/jpeg\r\n\r\n");
+                                var endBytes = System.Text.Encoding.ASCII.GetBytes("\r\n");
+
+                                DateTime lastSent = DateTime.MinValue;
+                                TimeSpan minInterval = TimeSpan.FromMilliseconds(66); // ~15 fps
+
+                                try
                                 {
-                                    byte[] frame;
-                                    lock (_frameLock) frame = _latestFrame;
-
-                                    if (frame.Length > 0)
+                                    while (!token.IsCancellationRequested)
                                     {
-                                        await context.Response.WriteAsync("--frame\r\n");
-                                        await context.Response.WriteAsync("Content-Type: image/jpeg\r\n\r\n");
-                                        await context.Response.Body.WriteAsync(frame, 0, frame.Length);
-                                        await context.Response.WriteAsync("\r\n");
-                                        await context.Response.Body.FlushAsync();
-                                    }
+                                        var now = DateTime.UtcNow;
+                                        if ((now - lastSent) < minInterval)
+                                        {
+                                            await Task.Delay(10, token);
+                                            continue;
+                                        }
 
-                                    await Task.Delay(33, token); // ~30 FPS
+                                        byte[] frame;
+                                        lock (_frameLock) frame = _latestFrame;
+
+                                        if (frame.Length == 0)
+                                        {
+                                            await Task.Delay(50, token);
+                                            continue;
+                                        }
+
+                                        await context.Response.Body.WriteAsync(boundaryBytes, 0, boundaryBytes.Length, token);
+                                        await context.Response.Body.WriteAsync(frame, 0, frame.Length, token);
+                                        await context.Response.Body.WriteAsync(endBytes, 0, endBytes.Length, token);
+                                        await context.Response.Body.FlushAsync(token);
+
+                                        lastSent = now;
+                                    }
+                                }
+                                catch (OperationCanceledException) { }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"Stream error: {ex.Message}");
                                 }
                             });
                         });
@@ -134,8 +164,8 @@ namespace ScreenStreamer
         private async Task CaptureScreenAsync(CancellationToken token)
         {
             var ffmpegArgs = OperatingSystem.IsWindows()
-                ? "-f gdigrab -i desktop -vf fps=15 -q:v 5 -f mjpeg -"
-                : "-f x11grab -i :0.0 -vf fps=15 -q:v 5 -f mjpeg -";
+                ? "-f gdigrab -framerate 15 -i desktop -q:v 10 -vf scale=640:-1 -f mjpeg -"
+                : "-f x11grab -framerate 15 -i :0.0 -q:v 10 -vf scale=640:-1 -f mjpeg -";
 
             using var process = new Process
             {
@@ -151,25 +181,22 @@ namespace ScreenStreamer
                 }
             };
 
-            // Capture ffmpeg errors for debugging (optional)
+            // Log ffmpeg errors for debugging
             _ = Task.Run(async () =>
             {
                 var reader = process.StandardError;
                 while (!reader.EndOfStream)
                 {
-                    string? line = await reader.ReadLineAsync();
+                    var line = await reader.ReadLineAsync();
                     if (line != null)
-                    {
-                        // Optionally log or show ffmpeg stderr output
                         Debug.WriteLine($"FFmpeg: {line}");
-                    }
                 }
             });
 
             process.Start();
 
             var outputStream = process.StandardOutput.BaseStream;
-            var buffer = new byte[4096];
+            var buffer = new byte[64 * 1024];
             var frameBuffer = new MemoryStream();
 
             try
@@ -185,14 +212,14 @@ namespace ScreenStreamer
                     int length = (int)frameBuffer.Length;
 
                     int lastIndex = 0;
+
                     for (int i = 1; i < length; i++)
                     {
-                        if (data[i - 1] == 0xFF && data[i] == 0xD9) // JPEG EOI
+                        if (data[i - 1] == 0xFF && data[i] == 0xD9)
                         {
                             int frameLength = i + 1 - lastIndex;
-                            byte[] frame = new byte[frameLength];
+                            var frame = new byte[frameLength];
                             Array.Copy(data, lastIndex, frame, 0, frameLength);
-
                             lastIndex = i + 1;
 
                             lock (_frameLock)
@@ -200,14 +227,26 @@ namespace ScreenStreamer
                                 _latestFrame = frame;
                             }
 
-                            // Decode JPEG frame to Avalonia Bitmap on background thread
-                            using var ms = new MemoryStream(frame);
-                            var bitmap = await Task.Run(() => Bitmap.DecodeToWidth(ms, 800));
-
-                            Dispatcher.UIThread.Post(() =>
+                            if (_decodeSemaphore.Wait(0))
                             {
-                                LatestBitmap = bitmap;
-                            });
+                                _ = Task.Run(() =>
+                                {
+                                    try
+                                    {
+                                        using var ms = new MemoryStream(frame);
+                                        var bitmap = Bitmap.DecodeToWidth(ms, 800);
+
+                                        Dispatcher.UIThread.Post(() =>
+                                        {
+                                            LatestBitmap = bitmap;
+                                        });
+                                    }
+                                    finally
+                                    {
+                                        _decodeSemaphore.Release();
+                                    }
+                                });
+                            }
                         }
                     }
 
@@ -218,14 +257,22 @@ namespace ScreenStreamer
                         Array.Copy(data, lastIndex, remainingData, 0, remaining);
                         frameBuffer.SetLength(0);
                         frameBuffer.Write(remainingData, 0, remaining);
-                        // Reset position for next write
                         frameBuffer.Position = frameBuffer.Length;
                     }
+                    else if (frameBuffer.Length > 10 * 1024 * 1024)
+                    {
+                        // Reset if buffer gets too large without a complete JPEG frame end
+                        frameBuffer.SetLength(0);
+                        frameBuffer.Position = 0;
+                    }
+
+                    // Small delay to prevent CPU spin when waiting for more data
+                    await Task.Delay(15, token);
                 }
             }
             catch (OperationCanceledException)
             {
-                // Expected when cancellation token is triggered
+                // expected on cancellation
             }
             finally
             {
@@ -233,13 +280,10 @@ namespace ScreenStreamer
                 {
                     try
                     {
-                        // Attempt graceful exit by sending "q"
                         await process.StandardInput.WriteAsync("q");
                         await process.StandardInput.FlushAsync();
                     }
-                    catch { /* ignore */ }
-
-                    // Wait a short time for process to exit gracefully
+                    catch { }
                     if (!process.WaitForExit(2000))
                     {
                         process.Kill();
