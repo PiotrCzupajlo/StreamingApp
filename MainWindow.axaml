@@ -1,9 +1,17 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ScreenStreamer.MainWindow"
-        Title="ScreenStreamer">
-    Welcome to Avalonia!
+        Title="Screen Streamer" Width="800" Height="600"
+        xmlns:local="clr-namespace:ScreenStreamer"
+        x:DataType="local:MainWindow"
+>
+
+    <StackPanel>
+        <Image Source="{Binding LatestBitmap}" Stretch="Uniform" Width="800" Height="450"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+            <Button Name="StartButton" Content="Start" Click="OnStartStreaming"/>
+            <Button Name="StopButton" Content="Stop" Click="OnStopStreaming" IsEnabled="False" Margin="10,0,0,0"/>
+        </StackPanel>
+        <TextBlock Name="StatusText" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+    </StackPanel>
 </Window>

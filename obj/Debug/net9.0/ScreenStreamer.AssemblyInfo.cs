@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScreenStreamer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+357818247b1ef00423816372e5f749a42ea84c63")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScreenStreamer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ScreenStreamer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

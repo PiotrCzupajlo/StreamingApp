@@ -71,3 +71,4 @@
 /home/piotr/ScreenStreamer/obj/Debug/net9.0/ScreenStreamer.pdb
 /home/piotr/ScreenStreamer/obj/Debug/net9.0/ScreenStreamer.genruntimeconfig.cache
 /home/piotr/ScreenStreamer/obj/Debug/net9.0/ref/ScreenStreamer.dll
+/home/piotr/ScreenStreamer/obj/Debug/net9.0/ScreenStreamer.sourcelink.json
