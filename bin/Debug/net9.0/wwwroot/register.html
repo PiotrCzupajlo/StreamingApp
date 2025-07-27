@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Screen Streamer Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required><br>
+        <input type="password" id="password" placeholder="Password" required><br>
+        <button type="submit">Login</button>
+    </form>
+        <a href="/">Login</a>
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const Username = document.getElementById("username").value;
+            const Password = document.getElementById("password").value;
+
+            const res = await fetch("/insert", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Username, Password })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert("Insert success! Token: " + data.token);
+            } else {
+                alert("Insert failed!");
+            }
+        });
+    </script>
+</body>
+</html>

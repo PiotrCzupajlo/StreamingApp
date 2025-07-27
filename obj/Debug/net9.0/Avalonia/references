@@ -22,7 +22,12 @@
 /home/piotr/.nuget/packages/avalonia.win32/11.3.2/lib/net8.0/Avalonia.Win32.Automation.dll
 /home/piotr/.nuget/packages/avalonia.win32/11.3.2/lib/net8.0/Avalonia.Win32.dll
 /home/piotr/.nuget/packages/avalonia.x11/11.3.2/lib/net8.0/Avalonia.X11.dll
+/home/piotr/.nuget/packages/bouncycastle.cryptography/2.5.1/lib/net6.0/BouncyCastle.Cryptography.dll
+/home/piotr/.nuget/packages/google.protobuf/3.30.0/lib/net5.0/Google.Protobuf.dll
 /home/piotr/.nuget/packages/harfbuzzsharp/8.3.1.1/lib/net8.0/HarfBuzzSharp.dll
+/home/piotr/.nuget/packages/k4os.compression.lz4/1.3.8/lib/net6.0/K4os.Compression.LZ4.dll
+/home/piotr/.nuget/packages/k4os.compression.lz4.streams/1.3.8/lib/net6.0/K4os.Compression.LZ4.Streams.dll
+/home/piotr/.nuget/packages/k4os.hash.xxhash/1.0.8/lib/net6.0/K4os.Hash.xxHash.dll
 /home/piotr/.nuget/packages/microcom.runtime/0.11.0/lib/net5.0/MicroCom.Runtime.dll
 /usr/share/dotnet/packs/Microsoft.AspNetCore.App.Ref/9.0.6/ref/net9.0/Microsoft.AspNetCore.Antiforgery.dll
 /usr/share/dotnet/packs/Microsoft.AspNetCore.App.Ref/9.0.6/ref/net9.0/Microsoft.AspNetCore.Authentication.Abstractions.dll
@@ -165,6 +170,7 @@
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/Microsoft.Win32.Primitives.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/Microsoft.Win32.Registry.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/mscorlib.dll
+/home/piotr/.nuget/packages/mysql.data/9.4.0/lib/net9.0/MySql.Data.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/netstandard.dll
 /home/piotr/.nuget/packages/skiasharp/2.88.9/lib/net6.0/SkiaSharp.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.AppContext.dll
@@ -180,6 +186,7 @@
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.ComponentModel.EventBasedAsync.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.ComponentModel.Primitives.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.ComponentModel.TypeConverter.dll
+/home/piotr/.nuget/packages/system.configuration.configurationmanager/8.0.0/lib/net8.0/System.Configuration.ConfigurationManager.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Configuration.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Console.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Core.dll
@@ -286,9 +293,11 @@
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Cryptography.Encoding.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Cryptography.OpenSsl.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Cryptography.Primitives.dll
+/home/piotr/.nuget/packages/system.security.cryptography.protecteddata/8.0.0/lib/net8.0/System.Security.Cryptography.ProtectedData.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Cryptography.X509Certificates.dll
 /usr/share/dotnet/packs/Microsoft.AspNetCore.App.Ref/9.0.6/ref/net9.0/System.Security.Cryptography.Xml.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.dll
+/home/piotr/.nuget/packages/system.security.permissions/8.0.0/lib/net8.0/System.Security.Permissions.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Principal.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.Principal.Windows.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Security.SecureString.dll
@@ -317,6 +326,7 @@
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Web.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Web.HttpUtility.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Windows.dll
+/home/piotr/.nuget/packages/system.windows.extensions/8.0.0/lib/net8.0/System.Windows.Extensions.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Xml.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Xml.Linq.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Xml.ReaderWriter.dll
@@ -328,3 +338,4 @@
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/System.Xml.XPath.XDocument.dll
 /home/piotr/.nuget/packages/tmds.dbus.protocol/0.21.2/lib/net8.0/Tmds.DBus.Protocol.dll
 /usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/9.0.6/ref/net9.0/WindowsBase.dll
+/home/piotr/.nuget/packages/zstdsharp.port/0.8.5/lib/net9.0/ZstdSharp.dll

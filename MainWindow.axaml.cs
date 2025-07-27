@@ -11,7 +11,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel;
-
+using MySql.Data.MySqlClient;
+using System.Security.Cryptography;
+using System.Text;
 namespace ScreenStreamer
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
@@ -20,8 +22,9 @@ namespace ScreenStreamer
         private IHost? _webHost;
         private byte[] _latestFrame = Array.Empty<byte>();
         private readonly object _frameLock = new();
-
+        public record LoginRequest(string Username, string Password);
         private Bitmap? _latestBitmap = null;
+        private string connectionString;
         public Bitmap? LatestBitmap
         {
             get => _latestBitmap;
@@ -40,7 +43,8 @@ namespace ScreenStreamer
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = this; 
+            DataContext = this;
+            connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION");
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -56,10 +60,8 @@ namespace ScreenStreamer
 
             _cts = new CancellationTokenSource();
 
-            // Start FFmpeg capture asynchronously (fire-and-forget)
             _ = CaptureScreenAsync(_cts.Token);
 
-            // Start web server
             await StartWebServer(_cts.Token);
 
             StatusText.Text = "Streaming on http://<your-lan-ip>:5000";
@@ -105,7 +107,132 @@ namespace ScreenStreamer
                                 var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
                                 context.Response.ContentType = "text/html";
                                 await context.Response.SendFileAsync(filePath);
+
                             });
+                            endpoints.MapGet("/register", async context =>
+                            {
+                                var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "register.html");
+                                context.Response.ContentType = "text/html";
+                                await context.Response.SendFileAsync(filePath);
+                                
+                            });
+
+                        endpoints.MapPost("/insert", async context =>
+                            {
+                                Console.WriteLine("Received /insert request");
+
+                                var request = await context.Request.ReadFromJsonAsync<LoginRequest>();
+                                if (request == null)
+                                {
+                                    Console.WriteLine("Request body is null");
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { success = false, message = "Invalid request" });
+                                    return;
+                                }
+
+                                Console.WriteLine($"Username: {request.Username}, Password provided: {!string.IsNullOrEmpty(request.Password)}");
+
+                                if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+                                {
+                                    Console.WriteLine("Username or password is missing");
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { success = false, message = "Username and password are required" });
+                                    return;
+                                }
+
+                                string hashedPassword;
+                                using (SHA256 sha256 = SHA256.Create())
+                                {
+                                    byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
+                                    hashedPassword = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                                }
+                                Console.WriteLine($"Hashed password: {hashedPassword}");
+
+
+                                try
+                                {
+                                    using (var conn = new MySqlConnection(connectionString))
+                                    {
+                                        await conn.OpenAsync();
+                                        Console.WriteLine("Database connection opened");
+
+                                        string insertQuery = "INSERT INTO users (username, password) VALUES (@username, @password)";
+                                        using (var cmd = new MySqlCommand(insertQuery, conn))
+                                        {
+                                            cmd.Parameters.AddWithValue("@username", request.Username);
+                                            cmd.Parameters.AddWithValue("@password", hashedPassword);
+
+                                            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+                                            Console.WriteLine($"Rows affected: {rowsAffected}");
+
+                                            if (rowsAffected > 0)
+                                            {
+                                                Console.WriteLine("User inserted successfully");
+                                                await context.Response.WriteAsJsonAsync(new { success = true, message = "User inserted successfully" });
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Insert failed: No rows affected");
+                                                context.Response.StatusCode = 500;
+                                                await context.Response.WriteAsJsonAsync(new { success = false, message = "Insert failed" });
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Exception occurred: {ex.Message}");
+                                    context.Response.StatusCode = 500;
+                                    await context.Response.WriteAsJsonAsync(new { success = false, message = "Server error" });
+                                }
+                            });
+                        endpoints.MapPost("/login", async context =>
+                        {
+                            var request = await context.Request.ReadFromJsonAsync<LoginRequest>();
+
+                            if (request == null || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+                            {
+                                context.Response.StatusCode = 400;
+                                await context.Response.WriteAsJsonAsync(new { success = false, message = "Username and password are required" });
+                                return;
+                            }
+
+                            string hashedPassword;
+                            using (SHA256 sha256 = SHA256.Create())
+                            {
+                                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
+                                hashedPassword = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                            }
+
+
+                            bool isValidUser = false;
+                            using (var conn = new MySqlConnection(connectionString))
+                            {
+                                await conn.OpenAsync();
+                                string query = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
+
+                                using (var cmd = new MySqlCommand(query, conn))
+                                {
+                                    cmd.Parameters.AddWithValue("@username", request.Username);
+                                    cmd.Parameters.AddWithValue("@password", hashedPassword);
+
+                                    var result = await cmd.ExecuteScalarAsync();
+                                    isValidUser = Convert.ToInt32(result) > 0;
+                                }
+                            }
+
+                            if (isValidUser)
+                            {
+                                    await context.Response.WriteAsJsonAsync(new { success = true, token = "Succes" });
+                            }
+                            else
+                            {
+                                context.Response.StatusCode = 401;
+                                await context.Response.WriteAsJsonAsync(new { success = false, message = "Invalid credentials" });
+                            }
+                        });
+
+
 
 
                             endpoints.MapGet("/stream", async context =>
@@ -183,7 +310,6 @@ namespace ScreenStreamer
                 }
             };
 
-            // Log ffmpeg errors for debugging
             _ = Task.Run(async () =>
             {
                 var reader = process.StandardError;
