@@ -14,6 +14,7 @@ using System.ComponentModel;
 using MySql.Data.MySqlClient;
 using System.Security.Cryptography;
 using System.Text;
+using DotNetEnv;
 namespace ScreenStreamer
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
@@ -42,9 +43,11 @@ namespace ScreenStreamer
 
         public MainWindow()
         {
+            Env.Load();
+            connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION");
             InitializeComponent();
             DataContext = this;
-            connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION");
+            
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -112,6 +115,13 @@ namespace ScreenStreamer
                             endpoints.MapGet("/register", async context =>
                             {
                                 var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "register.html");
+                                context.Response.ContentType = "text/html";
+                                await context.Response.SendFileAsync(filePath);
+                                
+                            });
+                            endpoints.MapGet("/streampage", async context =>
+                            {
+                                var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "stream.html");
                                 context.Response.ContentType = "text/html";
                                 await context.Response.SendFileAsync(filePath);
                                 
@@ -196,7 +206,7 @@ namespace ScreenStreamer
                                 await context.Response.WriteAsJsonAsync(new { success = false, message = "Username and password are required" });
                                 return;
                             }
-
+                            Console.WriteLine($"Rows affected: {connectionString}");
                             string hashedPassword;
                             using (SHA256 sha256 = SHA256.Create())
                             {
@@ -217,6 +227,7 @@ namespace ScreenStreamer
                                     cmd.Parameters.AddWithValue("@password", hashedPassword);
 
                                     var result = await cmd.ExecuteScalarAsync();
+                                    Console.WriteLine($"Rows affected: {result}");
                                     isValidUser = Convert.ToInt32(result) > 0;
                                 }
                             }
@@ -293,8 +304,8 @@ namespace ScreenStreamer
         private async Task CaptureScreenAsync(CancellationToken token)
         {
             var ffmpegArgs = OperatingSystem.IsWindows()
-                ? "-f gdigrab -framerate 15 -i desktop -q:v 10 -vf scale=640:-1 -f mjpeg -"
-                : "-f x11grab -framerate 15 -i :0.0 -q:v 10 -vf scale=640:-1 -f mjpeg -";
+                ? "-f gdigrab -framerate 30 -i desktop -q:v 10 -vf scale=640:-1 -f mjpeg -"
+                : "-f x11grab -framerate 30 -i :0.0 -q:v 10 -vf scale=640:-1 -f mjpeg -";
 
             using var process = new Process
             {

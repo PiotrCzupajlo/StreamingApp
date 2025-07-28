@@ -89,3 +89,6 @@
 /home/piotr/ScreenStreamer/bin/Debug/net9.0/runtimes/win-x64/native/krb5_64.dll
 /home/piotr/ScreenStreamer/bin/Debug/net9.0/runtimes/win-x64/native/krbcc64.dll
 /home/piotr/ScreenStreamer/bin/Debug/net9.0/runtimes/win/lib/net8.0/System.Windows.Extensions.dll
+/home/piotr/ScreenStreamer/bin/Debug/net9.0/dotenv.net.dll
+/home/piotr/ScreenStreamer/bin/Debug/net9.0/DotNetEnv.dll
+/home/piotr/ScreenStreamer/bin/Debug/net9.0/Sprache.dll
